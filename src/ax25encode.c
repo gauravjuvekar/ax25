@@ -2,15 +2,17 @@
 #include<stdio.h>
 #include<stdbool.h>
 #include "specifications.h"
+#include "addressing.h"
 
 static char doc[] = "Encodes data into AX.25 frames";
 static char args_doc[] = "DESTINATION SOURCE ";
 
 static struct argp_option options[] = {
-	{ "repeater", 'r', "CALLSIGN:SSID", 0, "Repeater station CALLSIGN:SSID" },
-	{ "input",    'i', "FILE",     0, "Input file" },
-	{ "output",   'o', "FILE",     0, "Output file" },
-	{ 0 }
+	{ "repeater", 'r', "CALLSIGN:SSID", 0,
+		"Repeater station CALLSIGN:SSID", 0 },
+	{ "input",    'i', "FILE",          0, "Input file",  0 },
+	{ "output",   'o', "FILE",          0, "Output file", 0 },
+	{ 0, 0, 0, 0, 0, 0}
 };
 
 struct arguments {
@@ -27,7 +29,13 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
 		case 'o': arguments->output_file = arg; break;
 		case 'r': {
 			if (arguments->repeater_count + 2 < ROUTING_MAX_NODES) {
-				arguments->routing[arguments->repeater_count + 2] = arg;
+				if (is_valid_address(arg)) {
+					arguments->routing[arguments->repeater_count + 2] = arg;
+				}
+				else {
+					argp_failure(state, 1, 0, 
+							"invalid address format for repeater %s", arg);
+				}
 				arguments->repeater_count += 1;
 			}
 			else {
@@ -45,7 +53,15 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
 			if (state->arg_num >= 2) {
 				argp_usage(state);
 			}
-			arguments->routing[state->arg_num] = arg;
+			if (arg != NULL) {
+				if (is_valid_address(arg)) {
+					arguments->routing[state->arg_num] = arg;
+				}
+				else {
+					argp_failure(state, 1, 0, 
+							"invalid address format for argument %s", arg);
+				}
+			}
 			break;
 		}
 		case ARGP_KEY_END: {
@@ -63,7 +79,8 @@ static struct argp argp = {
 	options,
 	parse_opt,
 	args_doc,
-	doc
+	doc,
+	0, 0, 0
 };
 
 int main(int argc, char *argv[]) {
