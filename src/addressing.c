@@ -2,6 +2,8 @@
 #include<string.h>
 #include<stdlib.h>
 #include<ctype.h>
+#include<stdio.h>
+#include<sysexits.h>
 
 bool is_valid_address(const char *address){
 	int i = 0;
@@ -56,6 +58,33 @@ uint8_t *address_from_string(uint8_t *buffer, const char *string) {
 
 	buffer[i] = ((((uint8_t)strtoul(&string[i],NULL,0)) & 0x0f) << 1) | 0x60;
 	/* 011SSID0 , still need to set C/H and extension bit externally*/
+	// ^ <--- TODO : in address_field() 
 	
 	return &buffer[0];
+}
+
+
+size_t address_field(struct frame *dest, const struct arguments *source) {
+	/* Fills dest->address with a proper address field of which 
+	 * dest->address_count elements are to be used with input from 
+	 * argument struct from main
+	 * address_count is additionally returned.
+	 */
+	int nodes = source->repeater_count + 2;
+	dest->address = malloc(nodes * 7 * sizeof(*(dest->address)));
+	if (dest->address == NULL) {
+		fprintf(stderr, "fatal, malloc failed");
+		exit(EX_OSERR);
+	}
+	uint8_t *next = dest->address;
+
+	int i;
+	for(i = 0 ; i < nodes ; ++i) {
+		next = address_from_string(next, source->routing[i]);
+	}
+	next -= 1;
+	*next |= 0x01;
+
+	dest->address_count = nodes;
+	return nodes;
 }

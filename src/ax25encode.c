@@ -1,6 +1,7 @@
 #include<argp.h>
 #include<stdio.h>
 #include<stdbool.h>
+#include "ax25encode.h"
 #include "specifications.h"
 #include "addressing.h"
 
@@ -15,12 +16,6 @@ static struct argp_option options[] = {
 	{ 0, 0, 0, 0, 0, 0}
 };
 
-struct arguments {
-	char *routing[ROUTING_MAX_NODES];
-	int repeater_count;
-	char *input_file;
-	char *output_file;
-};
 
 static error_t parse_opt(int key, char *arg, struct argp_state *state) {
 	struct arguments *arguments = state->input;
