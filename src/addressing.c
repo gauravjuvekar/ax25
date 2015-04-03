@@ -41,6 +41,8 @@ uint8_t *address_from_string(uint8_t *buffer, const char *string) {
 	 * (ascii in first 7 bits with last bit 0, space padded to 6 bytes + SSID)
 	 * stored in uint8_t *buffer which must be 7 bytes long
 	 * The address bit and C/H bit of SSID octet need to be set externally
+	 *
+	 * The function returns the address of the byte AFTER the SSID byte
 	 **/
 	int i = 0;
 	while(string[i] != ':') {
