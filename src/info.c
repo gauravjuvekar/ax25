@@ -16,7 +16,7 @@ bool bit_stuff(
 	state->src_mask  = 0x1 << (src_shift_mod  -1);
 	state->dest_mask = 0x1 << (dest_shift_mod -1);
 	for(; state->dest_index < dest_n; ++(state->dest_index)) {
-		for(; state->dest_count < dest_shift_mod; ++(state->dest_count)) {
+		while(state->dest_count < dest_shift_mod) {
 			if(src[state->src_index] & 
 					(state->src_mask)>>(state->src_count % src_shift_mod)) {
 				// Current bit is 1
@@ -44,6 +44,9 @@ bool bit_stuff(
 					(state->dest_count % dest_shift_mod));
 				++(state->src_count);
 			}
+
+			++(state->dest_count);
+
 			if(!(state->src_count < src_shift_mod)) {
 				state->src_count = 0;
 				++(state->src_index);
