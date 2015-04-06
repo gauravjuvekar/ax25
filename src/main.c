@@ -6,32 +6,32 @@
 
 
 int main(int argc, char *argv[]) {
-	/*const char *pos = argv[1];*/
-	size_t input_n = strlen(argv[1]);
+	size_t input_n = argc - 1;
+	uint8_t input[input_n];
+	size_t count=0;
 
-	size_t i;
-	for(i = 0 ; i < input_n ; ++i) {
-		argv[1][i] = byterev(argv[1][i]);
-		printf("%2hhx ", argv[1][i]);
+	for(count=0;count < input_n;count++) {
+		input[count] = (uint8_t) strtol(argv[count + 1],NULL, 16);
+	}
+
+
+	for(count = 0 ; count < input_n ; ++count) {
+		input[count] = byterev(input[count]);
+		printf("%2hhx ", input[count]);
 	}
 	puts("\n\n");
 	
-	uint8_t input[2];
-	input[0] = input[1] = 0;
 	uint16_t output;
-	/*size_t count=0;*/
-	/*for(count=0;count < input_n;count++) {*/
-		/*sscanf(pos, "%2hhx", &input[count]);*/
-		/*pos += 2*sizeof(input[0]);*/
-	/*}*/
+	uint8_t zero[2];
+	zero[0] = zero[1] = 0;
 
 	struct frame_check_state  state;
 	state.shift_count = 0;
-	state.mask        = 0;
+	state.src_mask    = 0;
 	state.src_index   = 0;
-	state.accumulator = 0x0000;
+	state.accumulator = 0x1d0f;
 
-	frame_check((uint8_t *)argv[1], input_n, &output, &state);
+	frame_check(input, input_n, &output, &state);
 
 	printf("fcs: %x\n", output);
 	printf("shift_count:%u\n", state.shift_count);
@@ -39,7 +39,9 @@ int main(int argc, char *argv[]) {
 	printf("accum:%u\n", state.accumulator);
 	puts("\n\n\n");
 
-	frame_check(input, 2, &output, &state);
+	state.src_index = 0;
+	state.shift_count = 0;
+	frame_check(zero, 2, &output, &state);
 
 	printf("fcs: %x\n", output);
 	printf("shift_count:%u\n", state.shift_count);

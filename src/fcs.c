@@ -1,6 +1,20 @@
 #include "fcs.h"
 #include<stdio.h>
+#include<string.h>
 
+const char *byte_to_binary(int x)
+{
+    static char b[9];
+    b[0] = '\0';
+
+    int z;
+    for (z = 128; z > 0; z >>= 1)
+    {
+        strcat(b, ((x & z) == z) ? "1" : "0");
+    }
+
+    return b;
+}
 void frame_check(
 		const uint8_t *src, const size_t src_n,
 		uint16_t *dest,
@@ -24,29 +38,48 @@ void frame_check(
 
 	while(state->src_index < src_n) {
 		while((state->accumulator & state->accumulator_mask) == 0) {
+
+
 			state->accumulator <<= 1;
+
 			if(src[state->src_index] & (state->src_mask >> state->shift_count)) {
-				state->accumulator |= 0x1;
+				state->accumulator |= 0x01;
 			}
 			state->shift_count += 1;
 			if(!(state->shift_count < src_shift_mod )) {
 				state->shift_count  = 0;
 				state->src_index   += 1;
 			}
+
+			printf("Accumulator:");
+			printf("%s ",byte_to_binary(((uint8_t*)&(state->accumulator))[1]));
+			printf("%s\n",byte_to_binary(((uint8_t*)&(state->accumulator))[0]));
 		}
 		// Shift out the MSB 1 since it's going to be zeroed.
 		state->accumulator <<= 1;
 		if(src[state->src_index] & (state->src_mask >> state->shift_count)) {
-			state->accumulator |= 0x1;
+			state->accumulator |= 0x01;
 		}
 		state->shift_count += 1;
 		if(!(state->shift_count < src_shift_mod )) {
 			state->shift_count  = 0;
 			state->src_index   += 1;
 		}
-		printf("%4x\n%4x\n", state->accumulator, divisor);
+
+		printf("MSB_shift:\n");
+		printf("Accumulator:");
+		printf("%s ",byte_to_binary(((uint8_t*)&(state->accumulator))[1]));
+		printf("%s XOR \n",byte_to_binary(((uint8_t*)&(state->accumulator))[0]));
+
+		printf("Divisor    :");
+		printf("%s ",byte_to_binary(((uint8_t*)&(divisor))[1]));
+		printf("%s =\n",byte_to_binary(((uint8_t*)&(divisor))[0]));
+
 		state->accumulator ^= divisor;
-		printf("----\n%4x\n\n", state->accumulator);
+		printf("Accumulator:");
+		printf("%s ",byte_to_binary(((uint8_t*)&(state->accumulator))[1]));
+		printf("%s \n",byte_to_binary(((uint8_t*)&(state->accumulator))[0]));
+		printf("---------------------------------\n");
 	}
 	*dest = state->accumulator;
 }
