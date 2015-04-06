@@ -1,4 +1,5 @@
 #include "fcs.h"
+#include<stdio.h>
 
 void frame_check(
 		const uint8_t *src, const size_t src_n,
@@ -14,34 +15,44 @@ void frame_check(
 	 */
 	// Actual divisor is 0x11021 but we match the first 1 bit which XOR
 	// to 0 and are discarded.
-	const uint16_t divisior = 0x1021;
+	const uint16_t divisor = 0x1021;
 	
-	const unsigned int shift_mod = (8 * sizeof(state->mask));
-	state->mask = 0x1 << (shift_mod - 1);
+	const unsigned int src_shift_mod         = (8 * sizeof(state->src_mask));
+	const unsigned int accumulator_shift_mod = (8 * sizeof(state->accumulator_mask));
+	state->src_mask         = 0x1 << (src_shift_mod - 1);
+	state->accumulator_mask = 0x1 << (accumulator_shift_mod - 1);
 
 	while(state->src_index < src_n) {
-		while((state->accumulator & state->mask) == 0) {
+		while((state->accumulator & state->accumulator_mask) == 0) {
 			state->accumulator <<= 1;
-			if(src[state->src_index] & (state->mask >> state->shift_count)) {
+			if(
+					src[state->src_index] &
+					(state->src_mask >> state->shift_count)) {
 				state->accumulator |= 0x1;
 			}
 			state->shift_count += 1;
-			if(!(state->shift_count < shift_mod )) {
+			if(!(state->shift_count < src_shift_mod )) {
 				state->shift_count  = 0;
 				state->src_index   += 1;
+				if(!(state->src_index < src_n)) {
+					break;
+				}
 			}
 		}
 		// Shift out the MSB 1 since it's going to be zeroed.
 		state->accumulator <<= 1;
-		if(src[state->src_index] & (state->mask >> state->shift_count)) {
+		if(!(state->src_index < src_n)) {
+			break;
+		}
+		if(src[state->src_index] & (state->src_mask >> state->shift_count)) {
 			state->accumulator |= 0x1;
 		}
 		state->shift_count += 1;
-		if(!(state->shift_count < shift_mod )) {
+		if(!(state->shift_count < src_shift_mod )) {
 			state->shift_count  = 0;
 			state->src_index   += 1;
 		}
-		state->accumulator ^= divisior;
+		state->accumulator ^= divisor;
 	}
 	*dest = state->accumulator;
 }
