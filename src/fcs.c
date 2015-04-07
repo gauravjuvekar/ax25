@@ -20,21 +20,16 @@ bool frame_check(
 	// to 0 and are discarded.
 	const uint16_t divisor = 0x1021;
 	
-	const unsigned int src_shift_mod         = (8 * sizeof(state->src_mask));
-	const unsigned int accumulator_shift_mod = 
-		(8 * sizeof(state->accumulator_mask));
-	state->src_mask         = 0x1 << (src_shift_mod - 1);
-	state->accumulator_mask = 0x1 << (accumulator_shift_mod - 1);
+	const unsigned int src_shift_mod   = (8 * sizeof(state->src_mask));
+	const uint32_t polynomial_msb_mask = 0x1 << (17 - 1);
+	state->src_mask                    = 0x1 << (src_shift_mod - 1);
 
 	while(state->src_index < src_n) {
 		// Shift till msb == 1
-		bool last_iteration; // To shift out that msb
-		for(
-				last_iteration = false;
-				((state->accumulator & state->accumulator_mask) == 0) ||
-					last_iteration; ) {
+		while((state->accumulator & polynomial_msb_mask) == 0) {
 			// Shift accumulator
 			state->accumulator <<= 1;
+			// Fill accumulator lsb
 			if(
 					src[state->src_index] &
 					(state->src_mask >> state->shift_count)) {
@@ -46,20 +41,16 @@ bool frame_check(
 				state->shift_count  = 0;
 				state->src_index   += 1;
 			}
-
 			if(!(state->src_index < src_n)) {
 				break;
 			}
-			if (last_iteration) {
-				break; // preserve last_iteration = true
-			}
 		}
-		if(last || last_iteration) {
+		if ((state->accumulator & polynomial_msb_mask) || last) {
 			state->accumulator ^= divisor;
 		}
 	}
 	state->src_index = 0;
-	*dest = state->accumulator;
+	*dest = (uint16_t)((state->accumulator) & (0xffff));
 	// Src consumed
 	return !last;
 }
