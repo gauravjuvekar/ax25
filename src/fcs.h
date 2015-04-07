@@ -5,10 +5,9 @@
 
 struct frame_check_state {
 	unsigned int shift_count;
-	uint8_t src_mask;
-	uint16_t accumulator_mask;
-	size_t src_index;
-	uint16_t accumulator;
+	uint8_t  src_mask;
+	size_t   src_index;
+	uint32_t accumulator;
 };
 
 bool frame_check(
