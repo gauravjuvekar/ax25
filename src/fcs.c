@@ -33,14 +33,14 @@ bool frame_check(
 	 */
 	// Actual divisor is 0x11021 but we match the first 1 bit which XOR
 	// to 0 and are discarded.
-	const uint16_t divisor = 0x1021;
+	const uint32_t divisor = 0x11021;
 	
 	const unsigned int src_shift_mod   = (8 * sizeof(state->src_mask));
 	const uint32_t polynomial_msb_mask = 0x1 << (17 - 1);
 	state->src_mask                    = 0x1 << (src_shift_mod - 1);
 
 	while(state->src_index < src_n) {
-		// Shift till msb == 1
+		// Shift till polynomial msb (bit 16) == 1
 		while((state->accumulator & polynomial_msb_mask) == 0) {
 			// Shift accumulator
 			state->accumulator <<= 1;
@@ -54,6 +54,8 @@ bool frame_check(
 
 
 			printf("Accumulator:");
+			printf("%s ",byte_to_binary(((uint8_t*)&(state->accumulator))[3]));
+			printf("%s ",byte_to_binary(((uint8_t*)&(state->accumulator))[2]));
 			printf("%s ",byte_to_binary(((uint8_t*)&(state->accumulator))[1]));
 			printf("%s\n",byte_to_binary(((uint8_t*)&(state->accumulator))[0]));
 
@@ -71,10 +73,14 @@ bool frame_check(
 		}
 		if ((state->accumulator & polynomial_msb_mask) || last) {
 			printf("Divisor    :");
+			printf("%s ",byte_to_binary(((uint8_t*)&(divisor))[3]));
+			printf("%s ",byte_to_binary(((uint8_t*)&(divisor))[2]));
 			printf("%s ",byte_to_binary(((uint8_t*)&(divisor))[1]));
 			printf("%s =\n",byte_to_binary(((uint8_t*)&(divisor))[0]));
 			state->accumulator ^= divisor;
 			printf("Accumulator:");
+			printf("%s ",byte_to_binary(((uint8_t*)&(state->accumulator))[3]));
+			printf("%s ",byte_to_binary(((uint8_t*)&(state->accumulator))[2]));
 			printf("%s ",byte_to_binary(((uint8_t*)&(state->accumulator))[1]));
 			printf("%s \n",byte_to_binary(((uint8_t*)&(state->accumulator))[0]));
 			printf("---------------------------------\n");
