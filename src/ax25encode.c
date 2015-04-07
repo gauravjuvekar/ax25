@@ -11,9 +11,7 @@ static char doc[]      = "Encodes data into AX.25 frames";
 static char args_doc[] = "DESTINATION SOURCE ";
 
 static struct argp_option options[] = {
-{ "repeater", 'r', "CALLSIGN:SSID", 0, "Repeater station CALLSIGN:SSID", 0 },
-{ "input",    'i', "FILE",          0, "Input file",                     0 },
-{ "output",   'o', "FILE",          0, "Output file",                    0 },
+{ "repeater", 'r', "CALLSIGN:SSID", 0, "Repeater station CALLSIGN:SSID", 0 }, { "input",    'i', "FILE",          0, "Input file",                     0 }, { "output",   'o', "FILE",          0, "Output file",                    0 },
 { 0,          0,   0,               0, 0,                                0 }
 };
 
@@ -85,18 +83,14 @@ int main(int argc, char *argv[]) {
 
 	FILE *input = fopen(arguments.input_file, "rb");
 	if (input == NULL) {
-		fprintf(stderr, "Cannot open input file");
+		fprintf(stderr, "Cannot open input file\n");
 		exit(EX_NOINPUT);
 	}
 	FILE *output = fopen(arguments.output_file, "wb");
 	if (output == NULL) {
-		fprintf(stderr, "Cannot open output file");
+		fprintf(stderr, "Cannot open output file\n");
 		exit(EX_CANTCREAT);
 	}
-
-
-
-
 
 	return 0;
 }

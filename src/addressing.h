@@ -7,4 +7,7 @@
 
 bool is_valid_address(const char *address);
 uint8_t *address_from_string(uint8_t *buffer, const char *string);
-size_t address_field(struct frame *dest, const struct arguments *source);
+size_t address_field(
+		struct frame *dest,
+		const char *source[], size_t address_count
+);
