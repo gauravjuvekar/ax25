@@ -23,16 +23,17 @@ bool frame_check(
 		bool last) {
 	/* Finds the fcs of src_n bytes of src and writes it to destinaton
 	 * state->accumulator must be initialized with an initial value
-	 * state->src_index must be set to 0 before recalling
+	 * mostly 0xffff
+	 * Polynomial value is 0x1021 (technically 0x11021
+	 * Input data is not reversed
+	 * Output crc is not reversed
+	 *
 	 * 16 0 bits must be supplied at the end of the data stream
 	 * last must be set to true when the last 16 zero bits are input
 	 *
 	 * returns true if src is comsumed
 	 * 
-	 * polynomial value used is 0x1021
 	 */
-	// Actual divisor is 0x11021 but we match the first 1 bit which XOR
-	// to 0 and are discarded.
 	const uint32_t divisor = 0x11021;
 	
 	const unsigned int src_shift_mod   = (8 * sizeof(state->src_mask));
@@ -71,7 +72,7 @@ bool frame_check(
 				break;
 			}
 		}
-		if ((state->accumulator & polynomial_msb_mask) || last) {
+		if ((state->accumulator & polynomial_msb_mask)) {
 			printf("Divisor    :");
 			printf("%s ",byte_to_binary(((uint8_t*)&(divisor))[3]));
 			printf("%s ",byte_to_binary(((uint8_t*)&(divisor))[2]));

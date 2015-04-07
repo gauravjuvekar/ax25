@@ -16,7 +16,7 @@ int main(int argc, char *argv[]) {
 
 
 	for(count = 0 ; count < input_n ; ++count) {
-		input[count] = byterev(input[count]);
+		/*input[count] = byterev(input[count]);*/
 		printf("%2hhx ", input[count]);
 	}
 	puts("\n\n");
@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
 	state.shift_count = 0;
 	state.src_mask    = 0;
 	state.src_index   = 0;
-	state.accumulator = 0x0000;
+	state.accumulator = 0xffff;
 
 	frame_check(input, input_n, &output, &state, false);
 
