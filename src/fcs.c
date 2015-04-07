@@ -51,17 +51,20 @@ bool frame_check(
 			// Shift accumulator
 			state->accumulator <<= 1;
 
+			if(
+					src[state->src_index] &
+					(state->src_mask >> state->shift_count)) {
+				state->accumulator |= 0x1;
+			}
+
+
 			if (last_iteration) {
 				printf("MSB_shift:\n");
 			}
 			printf("Accumulator:");
 			printf("%s ",byte_to_binary(((uint8_t*)&(state->accumulator))[1]));
 			printf("%s\n",byte_to_binary(((uint8_t*)&(state->accumulator))[0]));
-			if(
-					src[state->src_index] &
-					(state->src_mask >> state->shift_count)) {
-				state->accumulator |= 0x1;
-			}
+
 			// maintain src masks and pointers
 			state->shift_count += 1;
 			if(!(state->shift_count < src_shift_mod )) {
@@ -70,6 +73,7 @@ bool frame_check(
 			}
 
 			if(!(state->src_index < src_n)) {
+				printf("src consumed \n");
 				break;
 			}
 			if (last_iteration) {

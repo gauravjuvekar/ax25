@@ -29,9 +29,9 @@ int main(int argc, char *argv[]) {
 	state.shift_count = 0;
 	state.src_mask    = 0;
 	state.src_index   = 0;
-	state.accumulator = 0x1d0f;
+	state.accumulator = 0x0000;
 
-	frame_check(input, input_n, &output, &state);
+	frame_check(input, input_n, &output, &state, false);
 
 	printf("fcs: %x\n", output);
 	printf("shift_count:%u\n", state.shift_count);
@@ -41,7 +41,7 @@ int main(int argc, char *argv[]) {
 
 	state.src_index = 0;
 	state.shift_count = 0;
-	frame_check(zero, 2, &output, &state);
+	frame_check(zero, 2, &output, &state, true);
 
 	printf("fcs: %x\n", output);
 	printf("shift_count:%u\n", state.shift_count);
