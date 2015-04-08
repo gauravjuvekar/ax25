@@ -95,7 +95,6 @@ void encode_main_loop(
 	}
 
 	address_field(&frame, addresses, address_count);
-	frame.pid = pid();
 
 	size_t send_sequence = 0;
 
@@ -133,6 +132,7 @@ void encode_main_loop(
 
 		frame_check(&frame.control, 1,                &frame.fcs, &fcs_state,
 				false);
+		frame.pid = pid();
 		frame_check(&frame.pid,     1,                &frame.fcs, &fcs_state,
 				false);
 		frame_check(frame.info,     frame.info_count, &frame.fcs, &fcs_state,
