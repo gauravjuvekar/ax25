@@ -92,8 +92,6 @@ int main(int argc, char *argv[]) {
 		exit(EX_CANTCREAT);
 	}
 
-	encode_main_loop(
-			input, output, 256,
-			(const char **)arguments.routing, arguments.repeater_count + 2);
-	return 0;
+	decode_main_loop(input, output);
+	return EX_OK;
 }

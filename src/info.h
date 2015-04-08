@@ -16,7 +16,8 @@ struct bit_stuff_state {
 	unsigned int contiguous_bit_count;
 };
 
-bool bit_stuff(
+
+bool bit_destuff(
 		uint8_t *dest, size_t dest_n,
 		const uint8_t *src,  size_t src_n,
 		struct bit_stuff_state *state

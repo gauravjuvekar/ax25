@@ -10,88 +10,44 @@
 #include<arpa/inet.h>
 #include "common_functions.h"
 #include "info.h"
+#include<string.h>
+#include "specifications.h"
 
 
-
-unsigned int write_frame(
-		unsigned int bit_rotate,
-		struct frame* frame,
-		FILE *output) {
-	size_t i;
-	/* Move bit_rotate bits into the previous byte
-	 *
-	 */
-
-	// Byterev stuff
-	/*for(i = 0 ; i < frame->address_count * 7; ++i) {
-		frame->address[i] = byterev(frame->address[i]);
-	}*/
-	frame->control = byterev(frame->control);
-	frame->pid     = byterev(frame->pid);
-	for(i = 0 ; i < frame->info_count; ++i) {
-		frame->info[i] = byterev(frame->info[i]);
+void read_frame(
+		uint8_t buffer[], size_t buffer_n,
+		struct frame *frame) {
+	size_t i = 0;
+	for(i = 0; i < buffer_n - 2; ++i) {
+		buffer[i] = byterev(buffer[i]);
 	}
-
-	// bit_stuff and write
-	uint8_t buffer[1024];
-	struct bit_stuff_state stuff_state;
-	stuff_state.src_mask             = 0;
-	stuff_state.src_count            = 0;
-	stuff_state.dest_mask            = 0;
-	stuff_state.dest_count           = bit_rotate;
-	stuff_state.src_index            = 0;
-	stuff_state.dest_index           = 0;
-	stuff_state.contiguous_bit_count = 0;
-
-	buffer[0] = 0x7eu >> ((8 - bit_rotate) % 8); // flag
-	buffer[1] = 0x7eu << bit_rotate;
-	bit_stuff(
-			&buffer[1], 1023,
-			frame->address, 7 * frame->address_count,
-			&stuff_state);
-	bit_stuff(
-			&buffer[1], 1023,
-			&frame->control, 1,
-			&stuff_state);
-	bit_stuff(
-			&buffer[1], 1023,
-			&frame->pid, 1,
-			&stuff_state);
-	bit_stuff(
-			&buffer[1], 1023,
-			frame->info, frame->info_count,
-			&stuff_state);
-	bit_stuff(
-			&buffer[1], 1023,
-			(uint8_t *)&frame->fcs, 2,
-			&stuff_state);
-
-	buffer[stuff_state.dest_index-1] |= 0x7eu >> (stuff_state.dest_count);
-	buffer[stuff_state.dest_index]    = 0x7eu << (8 - stuff_state.dest_count); // flag
-	fseek(output, -1, SEEK_CUR);
-	uint8_t byte_buffer = 0;
-	fread(&byte_buffer, 1, 1, output);
-	fseek(output, -1, SEEK_CUR);
-	buffer[0] |= byte_buffer;
-	fwrite(buffer, 1, stuff_state.dest_index + 1, output);
-
-	return (8 - stuff_state.dest_count);
+	// Write address
+	for(i = 0; ; ++i) {
+		frame->address[i] = buffer[i];
+		if(buffer[i] & 1) {
+			break;
+		}
+	}
+	frame->address_count = i + 1;
+	++i;
+	frame->control       = buffer[i];
+	++i;
+	frame->pid           = buffer[i];
+	++i;
+	// info
+	frame->info_count = buffer_n - 2 - i;
+	memcpy(frame->info, &buffer[i], frame->info_count);
+	//fcs
+	memcpy(&frame->fcs, &buffer[buffer_n-2],2);
+	frame->fcs = ntohs(frame->fcs); // Endianness
 }
 
 
-
-
-void encode_main_loop(
-		const FILE *input, FILE *output,
-		size_t info_count,
-		const char *addresses[], size_t address_count) {
+void decode_main_loop(const FILE *input, FILE *output) {
 
 	struct frame frame;
-
-	frame.address_count = address_count;
-	frame.info_count    = info_count;
-	frame.address       = malloc(sizeof(*frame.address)*7*address_count);
-	frame.info          = malloc(sizeof(*frame.info)*info_count); 
+	frame.address       = malloc(sizeof(*frame.address)*7*ROUTING_MAX_NODES);
+	frame.info          = malloc(sizeof(*frame.info)*512);
 
 	if(frame.address == NULL || frame.info == NULL) {
 		fprintf(stderr, "fatal: malloc failed\n");
@@ -102,58 +58,58 @@ void encode_main_loop(
 		exit(EX_OSERR);
 	}
 
-	address_field(&frame, addresses, address_count);
+	size_t buffer_n = 1024;
+	uint8_t buffer[buffer_n];
+	uint8_t buffer_destuffed[buffer_n];
 
-	size_t send_sequence = 0;
+	struct bit_stuff_state destuff_state;
+	destuff_state.dest_mask            = 0;
+	destuff_state.dest_count           = 0;
+	destuff_state.dest_index           = 0;
+	destuff_state.contiguous_bit_count = 0;
 
+	bool destuff_ret;
 
-	struct frame_check_state fcs_state_address; // will be constant
-	// preserve this state
-	fcs_state_address.accumulator = 0xffff;
-	fcs_state_address.shift_count = 0;
-	fcs_state_address.src_mask    = 0;
-	fcs_state_address.src_index   = 0;
-
-	frame_check(
-			frame.address, frame.address_count,
-			&frame.fcs,
-			&fcs_state_address,
-			false);
-
-	size_t i = 0;
-	// reverse address
-	for(i = 0 ; i < frame.address_count * 7; ++i) {
-		frame.address[i] = byterev(frame.address[i]);
-	}
-
-
-	unsigned int file_bit_shift = 0;
 	while(!feof((FILE *)input)) {
-		frame.info_count =
-			fread(frame.info,sizeof(*frame.info),info_count,(FILE *)input);
-
-		frame.control = control_field(send_sequence, 0, false );
-		send_sequence = (send_sequence + 1) % 8;
-
-
-		// fcs calculation on non reflected frame
-		struct frame_check_state fcs_state = fcs_state_address;
-
-		frame_check(&frame.control, 1,                &frame.fcs, &fcs_state,
-				false);
-		frame.pid = pid();
-		frame_check(&frame.pid,     1,                &frame.fcs, &fcs_state,
-				false);
-		frame_check(frame.info,     frame.info_count, &frame.fcs, &fcs_state,
-				false);
-
-		uint8_t zero[2];
-		zero[0] = zero[1] = 0x00;
-		frame_check(zero, 2, &frame.fcs, &fcs_state, true);
-		frame.fcs = htons(frame.fcs); // Endianness
-
-		// write frame to file
-		file_bit_shift = write_frame(file_bit_shift, &frame, output); 
+		destuff_state.src_mask             = 0;
+		destuff_state.src_count            = 0;
+		destuff_state.src_index            = 0;
+		fread(
+				buffer,
+				sizeof(buffer[0]),
+				sizeof(buffer)/sizeof(buffer[0]),
+				(FILE *)input
+		);
+		
+		do {
+			destuff_ret = bit_destuff(
+					buffer_destuffed, buffer_n,
+					buffer, buffer_n,
+					&destuff_state
+			);
+			if(!destuff_ret) { // dest filled or flag
+				if(destuff_state.contiguous_bit_count == 6) { 
+					//because flag found
+					//we have a frame
+					size_t size = destuff_state.dest_index;
+					if(size > 17) { // Probably a valid frame
+						read_frame(buffer_destuffed, size, &frame);
+						fwrite(
+								frame.info,
+								sizeof(uint8_t), frame.info_count,
+								output
+						);
+					}
+					//reset dest buffer for next frame
+					destuff_state.dest_count           = 0;
+					destuff_state.dest_index           = 0;
+					destuff_state.contiguous_bit_count = 0;
+				}
+				else {
+					//dest filled, shouldnt happen :TODO:
+				}
+			}
+		} while (!destuff_ret);
 	}
 	free(frame.address);
 	free(frame.info);
