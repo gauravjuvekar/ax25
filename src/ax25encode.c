@@ -6,12 +6,12 @@
 #include "ax25encode.h"
 #include "specifications.h"
 #include "addressing.h"
+#include "file_io.h"
 
 static char doc[]      = "Encodes data into AX.25 frames";
 static char args_doc[] = "DESTINATION SOURCE ";
 
-static struct argp_option options[] = {
-{ "repeater", 'r', "CALLSIGN:SSID", 0, "Repeater station CALLSIGN:SSID", 0 }, { "input",    'i', "FILE",          0, "Input file",                     0 }, { "output",   'o', "FILE",          0, "Output file",                    0 },
+static struct argp_option options[] = { { "repeater", 'r', "CALLSIGN:SSID", 0, "Repeater station CALLSIGN:SSID", 0 }, { "input",    'i', "FILE",          0, "Input file",                     0 }, { "output",   'o', "FILE",          0, "Output file",                    0 },
 { 0,          0,   0,               0, 0,                                0 }
 };
 
@@ -86,11 +86,14 @@ int main(int argc, char *argv[]) {
 		fprintf(stderr, "Cannot open input file\n");
 		exit(EX_NOINPUT);
 	}
-	FILE *output = fopen(arguments.output_file, "r+b");
+	FILE *output = fopen(arguments.output_file, "w+b");
 	if (output == NULL) {
 		fprintf(stderr, "Cannot open output file\n");
 		exit(EX_CANTCREAT);
 	}
 
+	encode_main_loop(
+			input, output, 256,
+			(const char **)arguments.routing, arguments.repeater_count + 2);
 	return 0;
 }
