@@ -3,7 +3,7 @@
 #include<stdlib.h>
 #include<sysexits.h>
 #include<stdbool.h>
-#include "ax25encode.h"
+#include "ax25decode.h"
 #include "specifications.h"
 #include "addressing.h"
 #include "file_io.h"
