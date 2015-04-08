@@ -2,16 +2,11 @@
 #include<inttypes.h>
 #include<stddef.h>
 #include<stdbool.h>
+#include "common_functions.h"
 
 struct bit_stuff_state {
-	uint8_t src_mask;
-	unsigned int src_count;
-
-	uint8_t dest_mask;
-	unsigned int dest_count;
-
-	size_t src_index;
-	size_t dest_index;
+	struct get_bit_state get_state;
+	struct set_bit_state set_state;
 
 	unsigned int contiguous_bit_count;
 };

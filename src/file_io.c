@@ -13,21 +13,19 @@
 
 
 
-unsigned int write_frame(
-		unsigned int bit_rotate,
+uint8_t write_frame(
+		uint8_t bit_rotate_mask,
 		struct frame* frame,
 		FILE *output) {
-	size_t i;
-	/* Move bit_rotate bits into the previous byte
-	 *
+	/* Start with flag filled from bit_rotate_mask
+	 * Should be initially set to 0x80u
 	 */
 
 	// Byterev stuff
-	/*for(i = 0 ; i < frame->address_count * 7; ++i) {
-		frame->address[i] = byterev(frame->address[i]);
-	}*/
+	// Address is already bytereved
 	frame->control = byterev(frame->control);
 	frame->pid     = byterev(frame->pid);
+	size_t i;
 	for(i = 0 ; i < frame->info_count; ++i) {
 		frame->info[i] = byterev(frame->info[i]);
 	}
@@ -35,51 +33,64 @@ unsigned int write_frame(
 	// bit_stuff and write
 	uint8_t buffer[1024];
 	struct bit_stuff_state stuff_state;
-	stuff_state.src_mask             = 0;
-	stuff_state.src_count            = 0;
-	stuff_state.dest_mask            = 0;
-	stuff_state.dest_count           = bit_rotate;
-	stuff_state.src_index            = 0;
-	stuff_state.dest_index           = 0;
-	stuff_state.contiguous_bit_count = 0;
+	
+	stuff_state.get_state.src_mask  =
+		(0x1u<<(sizeof(stuff_state.get_state.src_mask)  * 8 - 1));
+	stuff_state.set_state.dest_mask    = bit_rotate_mask;
+	stuff_state.get_state.src_index    = 0;
+	stuff_state.set_state.dest_index   = 0;
+	stuff_state.set_state.dest_filled  = false;
+	stuff_state.get_state.src_consumed = false;
+	stuff_state.contiguous_bit_count   = 0;
 
-	buffer[0] = 0x7eu >> ((8 - bit_rotate) % 8); // flag
-	buffer[1] = 0x7eu << bit_rotate;
+	const uint8_t flag = 0x7eu;
+	// write flag
+	while(!stuff_state.get_state.src_consumed) {
+		set_bit(buffer, 1024,
+				get_bit(&flag, 1, &stuff_state.get_state),
+				&stuff_state.set_state);
+	}
+
 	bit_stuff(
-			&buffer[1], 1023,
+			buffer, 1024,
 			frame->address, 7 * frame->address_count,
 			&stuff_state);
 	bit_stuff(
-			&buffer[1], 1023,
+			buffer, 1024,
 			&frame->control, 1,
 			&stuff_state);
 	bit_stuff(
-			&buffer[1], 1023,
+			buffer, 1024,
 			&frame->pid, 1,
 			&stuff_state);
 	bit_stuff(
-			&buffer[1], 1023,
+			buffer, 1024,
 			frame->info, frame->info_count,
 			&stuff_state);
 	bit_stuff(
-			&buffer[1], 1023,
+			buffer, 1024,
 			(uint8_t *)&frame->fcs, 2,
 			&stuff_state);
+	// write flag
+	while(!stuff_state.get_state.src_consumed) {
+		set_bit(buffer, 1024,
+				get_bit(&flag, 1, &stuff_state.get_state),
+				&stuff_state.set_state);
+	}
 
-	buffer[stuff_state.dest_index-1] |= 0x7eu >> (stuff_state.dest_count);
-	buffer[stuff_state.dest_index]    = 0x7eu << (8 - stuff_state.dest_count); // flag
+	// get previous byte
 	fseek(output, -1, SEEK_CUR);
 	uint8_t byte_buffer = 0;
 	fread(&byte_buffer, 1, 1, output);
 	fseek(output, -1, SEEK_CUR);
+
+	// OR it with flag beginning
 	buffer[0] |= byte_buffer;
-	fwrite(buffer, 1, stuff_state.dest_index + 1, output);
+	buffer[stuff_state.set_state.dest_index + 1] = 0;
+	fwrite(buffer, 1, stuff_state.set_state.dest_index + 1 , output);
 
-	return (8 - stuff_state.dest_count);
+	return stuff_state.set_state.dest_mask ;
 }
-
-
-
 
 void encode_main_loop(
 		const FILE *input, FILE *output,
@@ -104,7 +115,6 @@ void encode_main_loop(
 
 	address_field(&frame, addresses, address_count);
 
-	size_t send_sequence = 0;
 
 
 	struct frame_check_state fcs_state_address; // will be constant
@@ -127,7 +137,8 @@ void encode_main_loop(
 	}
 
 
-	unsigned int file_bit_shift = 0;
+	size_t send_sequence = 0;
+	uint8_t file_bit_shift_mask = 0x1u << (sizeof(file_bit_shift_mask)* 8 - 1);
 	while(!feof((FILE *)input)) {
 		frame.info_count =
 			fread(frame.info,sizeof(*frame.info),info_count,(FILE *)input);
@@ -139,21 +150,19 @@ void encode_main_loop(
 		// fcs calculation on non reflected frame
 		struct frame_check_state fcs_state = fcs_state_address;
 
-		frame_check(&frame.control, 1,                &frame.fcs, &fcs_state,
-				false);
+		frame_check(&frame.control, 1, &frame.fcs, &fcs_state, false);
 		frame.pid = pid();
-		frame_check(&frame.pid,     1,                &frame.fcs, &fcs_state,
-				false);
-		frame_check(frame.info,     frame.info_count, &frame.fcs, &fcs_state,
+		frame_check(&frame.pid,     1, &frame.fcs, &fcs_state, false);
+		frame_check(frame.info, frame.info_count, &frame.fcs, &fcs_state,
 				false);
 
 		uint8_t zero[2];
-		zero[0] = zero[1] = 0x00;
+		zero[0] = zero[1] = 0x00u;
 		frame_check(zero, 2, &frame.fcs, &fcs_state, true);
 		frame.fcs = htons(frame.fcs); // Endianness
 
 		// write frame to file
-		file_bit_shift = write_frame(file_bit_shift, &frame, output); 
+		file_bit_shift_mask = write_frame(file_bit_shift_mask, &frame, output); 
 	}
 	free(frame.address);
 	free(frame.info);

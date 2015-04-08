@@ -10,55 +10,25 @@ bool bit_stuff(
 	 * returns true  if src  is consumed
 	 *
 	 */
-	const unsigned int src_shift_mod  = (8 * sizeof(state->src_mask ));
-	const unsigned int dest_shift_mod = (8 * sizeof(state->dest_mask));
-
-	state->src_mask  = 0x1 << (src_shift_mod  -1);
-	state->dest_mask = 0x1 << (dest_shift_mod -1);
-	for(; state->dest_index < dest_n; ++(state->dest_index)) {
-		while(state->dest_count < dest_shift_mod) {
-			if(src[state->src_index] & 
-					(state->src_mask)>>(state->src_count % src_shift_mod)) {
-				// Current bit is 1
-				state->contiguous_bit_count += 1;
-				if(state->contiguous_bit_count <= 5) {
-					// Fill the src bit
-					dest[state->dest_index] |=  // Fill 1
-						(state->dest_mask) >>
-						(state->dest_count % dest_shift_mod);
-					++(state->src_count);
-				}
-				else {
-					// Stuff 0
-					state->contiguous_bit_count = 0;
-					dest[state->dest_index] &= ~( // Fill 0
-						(state->dest_mask) >>
-						(state->dest_count % dest_shift_mod));
-				}
-			}
-			else {
-				// Current bit is 0
-				state->contiguous_bit_count = 0;
-				dest[state->dest_index] &= ~( // Fill 0
-					(state->dest_mask) >>
-					(state->dest_count % dest_shift_mod));
-				++(state->src_count);
-			}
-
-			++(state->dest_count);
-
-			if(!(state->src_count < src_shift_mod)) {
-				state->src_count = 0;
-				++(state->src_index);
-				if(!(state->src_index < src_n)) { // src is consumed
-					state->src_index = 0;
-					return true; 				
-				}
-			}
+	bool bit;
+	
+	while(!(
+				state->get_state.src_consumed ||
+				state->set_state.dest_filled)) {
+		if(state->contiguous_bit_count >= 5) {
+			// stuff 0
+			set_bit(dest, dest_n, false, &state->set_state);
+			state->contiguous_bit_count = 0;
 		}
-		state->dest_count = 0;
+		else {
+			bit = get_bit(src, src_n, &state->get_state);
+			set_bit(dest, dest_n, bit, &state->set_state);
+		}
 	}
-	// dest is filled
-	// state->dest_index points to the next byte
-	return false;
+	if(state->get_state.src_consumed) {
+		return true;
+	}
+	else {
+		return false;
+	}
 }
