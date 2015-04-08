@@ -63,17 +63,15 @@ void decode_main_loop(const FILE *input, FILE *output) {
 	uint8_t buffer_destuffed[buffer_n];
 
 	struct bit_stuff_state destuff_state;
-	destuff_state.dest_mask            = 0;
-	destuff_state.dest_count           = 0;
-	destuff_state.dest_index           = 0;
-	destuff_state.contiguous_bit_count = 0;
 
 	bool destuff_ret;
 
 	while(!feof((FILE *)input)) {
-		destuff_state.src_mask             = 0;
-		destuff_state.src_count            = 0;
-		destuff_state.src_index            = 0;
+		destuff_state.contiguous_bit_count  = 0;
+		destuff_state.get_state.src_mask = 
+			0x1u << (sizeof(destuff_state.set_state.dest_mask)*8-1);
+		destuff_state.get_state.src_index    = 0;
+		destuff_state.get_state.src_consumed = false;
 		fread(
 				buffer,
 				sizeof(buffer[0]),
@@ -82,16 +80,21 @@ void decode_main_loop(const FILE *input, FILE *output) {
 		);
 		
 		do {
+			destuff_state.set_state.dest_mask  = 
+				0x1u << (sizeof(destuff_state.set_state.dest_mask)*8-1);
+			destuff_state.set_state.dest_index  = 0;
+			destuff_state.set_state.dest_filled = false;
+			destuff_state.contiguous_bit_count  = 0;
+
 			destuff_ret = bit_destuff(
 					buffer_destuffed, buffer_n,
 					buffer, buffer_n,
 					&destuff_state
 			);
-			if(!destuff_ret) { // dest filled or flag
+			if(destuff_ret) { //got a frame 
 				if(destuff_state.contiguous_bit_count == 6) { 
-					//because flag found
 					//we have a frame
-					size_t size = destuff_state.dest_index;
+					size_t size = destuff_state.set_state.dest_index;
 					if(size > 17) { // Probably a valid frame
 						read_frame(buffer_destuffed, size, &frame);
 						fwrite(
@@ -100,10 +103,6 @@ void decode_main_loop(const FILE *input, FILE *output) {
 								output
 						);
 					}
-					//reset dest buffer for next frame
-					destuff_state.dest_count           = 0;
-					destuff_state.dest_index           = 0;
-					destuff_state.contiguous_bit_count = 0;
 				}
 				else {
 					//dest filled, shouldnt happen :TODO:
@@ -111,6 +110,7 @@ void decode_main_loop(const FILE *input, FILE *output) {
 			}
 		} while (!destuff_ret);
 	}
+
 	free(frame.address);
 	free(frame.info);
 }
