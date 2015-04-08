@@ -62,7 +62,7 @@ void decode_main_loop(const FILE *input, FILE *output) {
 	uint8_t buffer[buffer_n];
 	uint8_t buffer_destuffed[buffer_n];
 
-	struct bit_stuff_state destuff_state;
+	struct bit_destuff_state destuff_state;
 
 	bool destuff_ret;
 

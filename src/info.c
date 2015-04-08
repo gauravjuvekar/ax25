@@ -5,7 +5,7 @@
 bool bit_destuff(
 		uint8_t *dest, size_t dest_n,
 		const uint8_t *src,  size_t src_n,
-		struct bit_stuff_state *state) {
+		struct bit_destuff_state *state) {
 /* bit stuffs src_n*sizeof(*src) bytes from src into dest
  * returns false if an error occured 
  * returns true  if a complete frame is found 
