@@ -18,6 +18,10 @@ unsigned int write_frame(
 		struct frame* frame,
 		FILE *output) {
 	size_t i;
+	/* Move bit_rotate bits into the previous byte
+	 *
+	 */
+
 	// Byterev stuff
 	/*for(i = 0 ; i < frame->address_count * 7; ++i) {
 		frame->address[i] = byterev(frame->address[i]);
@@ -39,8 +43,8 @@ unsigned int write_frame(
 	stuff_state.dest_index           = 0;
 	stuff_state.contiguous_bit_count = 0;
 
-	buffer[0] = 0x7e >> (8-bit_rotate); // flag
-	buffer[1] = 0x7e << bit_rotate;
+	buffer[0] = 0x7eu >> ((8 - bit_rotate) % 8); // flag
+	buffer[1] = 0x7eu << bit_rotate;
 	bit_stuff(
 			&buffer[1], 1023,
 			frame->address, 7 * frame->address_count,
@@ -61,17 +65,21 @@ unsigned int write_frame(
 			&buffer[1], 1023,
 			(uint8_t *)&frame->fcs, 2,
 			&stuff_state);
-	buffer[stuff_state.dest_index-1] |= 0x7e >> (stuff_state.dest_count);
-	buffer[stuff_state.dest_index]    = 0x7e << (8 - stuff_state.dest_count); // flag
+
+	buffer[stuff_state.dest_index-1] |= 0x7eu >> (stuff_state.dest_count);
+	buffer[stuff_state.dest_index]    = 0x7eu << (8 - stuff_state.dest_count); // flag
 	fseek(output, -1, SEEK_CUR);
 	uint8_t byte_buffer = 0;
 	fread(&byte_buffer, 1, 1, output);
 	fseek(output, -1, SEEK_CUR);
 	buffer[0] |= byte_buffer;
-	fwrite(buffer, 1, stuff_state.dest_index, output);
+	fwrite(buffer, 1, stuff_state.dest_index + 1, output);
 
 	return (8 - stuff_state.dest_count);
 }
+
+
+
 
 void encode_main_loop(
 		const FILE *input, FILE *output,
@@ -119,6 +127,7 @@ void encode_main_loop(
 	}
 
 
+	unsigned int file_bit_shift = 0;
 	while(!feof((FILE *)input)) {
 		frame.info_count =
 			fread(frame.info,sizeof(*frame.info),info_count,(FILE *)input);
@@ -144,7 +153,6 @@ void encode_main_loop(
 		frame.fcs = htons(frame.fcs); // Endianness
 
 		// write frame to file
-		unsigned int file_bit_shift = 0;
 		file_bit_shift = write_frame(file_bit_shift, &frame, output); 
 	}
 	free(frame.address);
