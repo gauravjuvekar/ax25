@@ -108,7 +108,7 @@ void decode_main_loop(const FILE *input, FILE *output) {
 					//dest filled, shouldnt happen :TODO:
 				}
 			}
-		} while (!destuff_ret);
+		} while (destuff_ret);
 	}
 
 	free(frame.address);

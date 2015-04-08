@@ -24,6 +24,7 @@ bool bit_destuff(
 		if(state->contiguous_bit_count >= 5) { // this is 6th bit
 			if(bit) { // flag found
 				state->flag_found = true;
+				state->contiguous_bit_count += 1;
 			}
 			else { // destuff this
 				state->contiguous_bit_count = 0;
