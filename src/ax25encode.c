@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
 		fprintf(stderr, "Cannot open input file\n");
 		exit(EX_NOINPUT);
 	}
-	FILE *output = fopen(arguments.output_file, "wb");
+	FILE *output = fopen(arguments.output_file, "r+b");
 	if (output == NULL) {
 		fprintf(stderr, "Cannot open output file\n");
 		exit(EX_CANTCREAT);

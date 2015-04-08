@@ -59,6 +59,6 @@ bool bit_stuff(
 		state->dest_count = 0;
 	}
 	// dest is filled
-	state->dest_index = 0;
+	// state->dest_index points to the next byte
 	return false;
 }
