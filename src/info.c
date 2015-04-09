@@ -12,7 +12,6 @@ bool bit_destuff(
  * caller must check state->contiguous_bit_count to check for flags
  *
  */
-
 	state->flag_found = false;
 	
 	bool bit;
@@ -54,6 +53,7 @@ bool bit_destuff(
 			}
 			else {
 				// Proper flag, write the last 0 bit 
+				state->contiguous_bit_count = 0;
 				set_bit(dest, dest_n, bit, &state->set_state);
 				return true;
 			}
