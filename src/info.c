@@ -23,6 +23,12 @@ bool bit_stuff(
 		else {
 			bit = get_bit(src, src_n, &state->get_state);
 			set_bit(dest, dest_n, bit, &state->set_state);
+			if(bit) {
+				state->contiguous_bit_count += 1;
+			}
+			else {
+				state->contiguous_bit_count = 0;
+			}
 		}
 	}
 	if(state->get_state.src_consumed) {
