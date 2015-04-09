@@ -11,8 +11,11 @@
 static char doc[]      = "Encodes data into AX.25 frames";
 static char args_doc[] = "DESTINATION SOURCE ";
 
-static struct argp_option options[] = { { "repeater", 'r', "CALLSIGN:SSID", 0, "Repeater station CALLSIGN:SSID", 0 }, { "input",    'i', "FILE",          0, "Input file",                     0 }, { "output",   'o', "FILE",          0, "Output file",                    0 },
-{ 0,          0,   0,               0, 0,                                0 }
+static struct argp_option options[] = {
+	{ "repeater", 'r', "CALLSIGN:SSID", 0, "Repeater station CALLSIGN:SSID", 0 },
+	{ "input",    'i', "FILE",          0, "Input file",                     0 },
+	{ "output",   'o', "FILE",          0, "Output file",                    0 },
+	{ 0,          0,   0,               0, 0,                                0 }
 };
 
 
@@ -93,7 +96,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	encode_main_loop(
-			input, output, 256,
+			input, output, 2,
 			(const char **)arguments.routing, arguments.repeater_count + 2);
 	return 0;
 }
