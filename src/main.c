@@ -19,17 +19,33 @@ int main(int argc, char *argv[])
     }
 
 	struct bit_stuff_state state;
-	state.src_count  = 0;
-	state.dest_count = 0;
-	state.src_index  = 0;
-	state.dest_index = 0;
+	state.get_state.src_mask= 0x80u;
+	state.set_state.dest_mask= 0x80u;
+	state.get_state.src_index  = 0;
+	state.set_state.dest_index = 0;
 	state.contiguous_bit_count = 0;
 
-	bool ret = bit_stuff(
+	bool ret;
+	size_t i;
+
+	for (i = 0 ; i < sizeof(input)/2; i++) {
+	state.get_state.src_consumed = false;
+	state.get_state.src_index  = 0;
+	state.get_state.src_mask= 0x80u;
+	ret = bit_stuff(
 			output, sizeof(output)/sizeof(output[0]),
-			input,  sizeof(input)/sizeof(input[0]),
+			&input[i * 2],  2,
 			&state );
+
+
+    /*for(count = 0; count < sizeof(output)/sizeof(output[0]); count++)*/
+        /*printf("%02x", output[count]);*/
+    /*printf("\n--------------\n");*/
 	
+	
+	}
+
+
     for(count = 0; count < sizeof(input)/sizeof(input[0]); count++)
         printf("%02x", input[count]);
     printf("\n--------------\n");
@@ -38,10 +54,12 @@ int main(int argc, char *argv[])
         printf("%02x", output[count]);
     printf("\n--------------\n");
 	printf("ret                        = %d\n",  ret);
-	printf("state.src_count            = %d\n",  state.src_count);
-	printf("state.dest_count           = %d\n",  state.dest_count);
-	printf("state.src_index            = %zu\n", state.src_index);
-	printf("state.dest_index           = %zu\n", state.dest_index);
+	printf("state.get.cons             = %d\n",  state.get_state.src_consumed);
+	printf("state.set.fill             = %d\n",  state.set_state.dest_filled);
+	printf("state.src_count            = %d\n",  state.get_state.src_mask);
+	printf("state.dest_count           = %d\n",  state.set_state.dest_mask);
+	printf("state.src_index            = %zu\n", state.get_state.src_index);
+	printf("state.dest_index           = %zu\n", state.set_state.dest_index);
 	printf("state.contiguous_bit_count = %d\n",  state.contiguous_bit_count);
 
     return(0);
