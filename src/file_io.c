@@ -51,31 +51,49 @@ uint8_t write_frame(
 				&stuff_state.set_state);
 	}
 	stuff_state.get_state.src_consumed = false;
+	stuff_state.get_state.src_index    = 0;
+	stuff_state.get_state.src_mask  =
+		(0x1u<<(sizeof(stuff_state.get_state.src_mask)  * 8 - 1));
 	bit_stuff(
 			buffer, 1024,
 			frame->address, 7 * frame->address_count,
 			&stuff_state);
 	stuff_state.get_state.src_consumed = false;
+	stuff_state.get_state.src_index    = 0;
+	stuff_state.get_state.src_mask  =
+		(0x1u<<(sizeof(stuff_state.get_state.src_mask)  * 8 - 1));
 	bit_stuff(
 			buffer, 1024,
 			&frame->control, 1,
 			&stuff_state);
 	stuff_state.get_state.src_consumed = false;
+	stuff_state.get_state.src_index    = 0;
+	stuff_state.get_state.src_mask  =
+		(0x1u<<(sizeof(stuff_state.get_state.src_mask)  * 8 - 1));
 	bit_stuff(
 			buffer, 1024,
 			&frame->pid, 1,
 			&stuff_state);
 	stuff_state.get_state.src_consumed = false;
+	stuff_state.get_state.src_index    = 0;
+	stuff_state.get_state.src_mask  =
+		(0x1u<<(sizeof(stuff_state.get_state.src_mask)  * 8 - 1));
 	bit_stuff(
 			buffer, 1024,
 			frame->info, frame->info_count,
 			&stuff_state);
 	stuff_state.get_state.src_consumed = false;
+	stuff_state.get_state.src_index    = 0;
+	stuff_state.get_state.src_mask  =
+		(0x1u<<(sizeof(stuff_state.get_state.src_mask)  * 8 - 1));
 	bit_stuff(
 			buffer, 1024,
 			(uint8_t *)&frame->fcs, 2,
 			&stuff_state);
 	stuff_state.get_state.src_consumed = false;
+	stuff_state.get_state.src_index    = 0;
+	stuff_state.get_state.src_mask  =
+		(0x1u<<(sizeof(stuff_state.get_state.src_mask)  * 8 - 1));
 	// write flag
 	while(!stuff_state.get_state.src_consumed) {
 		set_bit(buffer, 1024,
