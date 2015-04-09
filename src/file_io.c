@@ -84,7 +84,6 @@ void decode_main_loop(const FILE *input, FILE *output) {
 				0x1u << (sizeof(destuff_state.set_state.dest_mask)*8-1);
 			destuff_state.set_state.dest_index  = 0;
 			destuff_state.set_state.dest_filled = false;
-			destuff_state.contiguous_bit_count  = 0;
 
 			destuff_ret = bit_destuff(
 					buffer_destuffed, buffer_n,
@@ -95,6 +94,7 @@ void decode_main_loop(const FILE *input, FILE *output) {
 				if(destuff_state.contiguous_bit_count == 6) { 
 					//we have a frame
 					size_t size = destuff_state.set_state.dest_index;
+					destuff_state.contiguous_bit_count  = 0;
 					if(size > 17) { // Probably a valid frame
 						read_frame(buffer_destuffed, size, &frame);
 						fwrite(
@@ -103,11 +103,15 @@ void decode_main_loop(const FILE *input, FILE *output) {
 								output
 						);
 					}
+					else {
+						// got interspace between empty flag
+					}
 				}
 				else {
 					//dest filled, shouldnt happen :TODO:
 				}
 			}
+			destuff_state.flag_found = false;
 		} while (destuff_ret);
 	}
 
