@@ -67,9 +67,8 @@ void decode_main_loop(const FILE *input, FILE *output) {
 	bool destuff_ret;
 
 	while(!feof((FILE *)input)) {
-		destuff_state.contiguous_bit_count  = 0;
-		destuff_state.get_state.src_mask = 
-			0x1u << (sizeof(destuff_state.set_state.dest_mask)*8-1);
+		destuff_state.contiguous_bit_count   = 0;
+		destuff_state.get_state.src_mask     = UINT8_T_MSB_MASK;
 		destuff_state.get_state.src_index    = 0;
 		destuff_state.get_state.src_consumed = false;
 		fread(
@@ -80,8 +79,7 @@ void decode_main_loop(const FILE *input, FILE *output) {
 		);
 		
 		do {
-			destuff_state.set_state.dest_mask  = 
-				0x1u << (sizeof(destuff_state.set_state.dest_mask)*8-1);
+			destuff_state.set_state.dest_mask   = UINT8_T_MSB_MASK;
 			destuff_state.set_state.dest_index  = 0;
 			destuff_state.set_state.dest_filled = false;
 

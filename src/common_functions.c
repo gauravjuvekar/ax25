@@ -40,7 +40,7 @@ bool get_bit(const uint8_t *src, size_t src_n, struct get_bit_state *state) {
 	bool bit = (src[state->src_index] & state->src_mask)?true:false;
 	state->src_mask >>= 1;
 	if(state->src_mask == 0) {
-		state->src_mask = (0x1u << (sizeof(state->src_mask) * 8 - 1));
+		state->src_mask = UINT8_T_MSB_MASK;
 		state->src_index += 1;
 		if(!(state->src_index < src_n)) {
 			state->src_consumed = true;
@@ -64,7 +64,7 @@ void set_bit(uint8_t *dest, size_t dest_n,
 	}
 	state->dest_mask >>= 1;
 	if(state->dest_mask == 0) {
-		state->dest_mask = (0x1u << (sizeof(state->dest_mask) * 8 - 1));
+		state->dest_mask = UINT8_T_MSB_MASK;
 		state->dest_index += 1;
 		if(!(state->dest_index < dest_n)) {
 			state->dest_filled = true;

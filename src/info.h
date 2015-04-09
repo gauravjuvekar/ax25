@@ -9,6 +9,7 @@ struct bit_destuff_state {
 	struct set_bit_state set_state;
 
 	bool flag_found;
+	bool data_error;
 	unsigned int contiguous_bit_count;
 };
 

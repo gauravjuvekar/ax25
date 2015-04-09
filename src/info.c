@@ -21,7 +21,7 @@ bool bit_destuff(
 				state->set_state.dest_filled  ||
 				state->flag_found)) {
 		bit = get_bit(src, src_n, &state->get_state);
-		if(state->contiguous_bit_count >= 5) { // this is 6th bit
+		if(state->contiguous_bit_count >= 5) { // this is 6th set bit
 			if(bit) { // flag found
 				state->flag_found = true;
 				state->contiguous_bit_count += 1;
@@ -37,22 +37,30 @@ bool bit_destuff(
 			else {
 				state->contiguous_bit_count = 0;
 			}
-			set_bit(dest, dest_n, bit, &state->set_state);
 		}
+
+		set_bit(dest, dest_n, bit, &state->set_state);
 	}
 	if(state->flag_found) {
-		if (get_bit(src, src_n, &state->get_state)) {
-			// TODO possible segfault since not checking src_consumed
-			// 7 contiguous bits
-			// also sets src to bit after flag
-			state->contiguous_bit_count += 1;
-			return false;
-		}
-		else {
-			return true;
-		}
+		/*if(!state->get_state.src_consumed) {*/
+			bit = get_bit(src, src_n, &state->get_state) ;
+			if (bit) {
+				// 7 contiguous bits
+				// also sets src to bit after flag
+				state->contiguous_bit_count += 1;
+				state->flag_found = false;
+				state->data_error = true;
+				return false;
+			}
+			else {
+				// Proper flag, write the last 0 bit 
+				set_bit(dest, dest_n, bit, &state->set_state);
+				return true;
+			}
+		/*}*/
 	}
 	else {
+		// src consumed or dest filled
 		return false;
 	}
 }

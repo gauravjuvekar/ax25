@@ -2,6 +2,7 @@
 #include<inttypes.h>
 #include<stdbool.h>
 #include<stddef.h>
+#define UINT8_T_MSB_MASK 0x80u
 
 uint8_t byterev(uint8_t byte);
 
