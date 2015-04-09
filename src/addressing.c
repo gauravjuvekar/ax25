@@ -46,7 +46,7 @@ uint8_t *address_from_string(uint8_t *buffer, const char *string) {
 	 *
 	 * The function returns the address of the byte AFTER the SSID byte
 	 **/
-	int i = 0;
+	size_t i = 0;
 	while(string[i] != ':') {
 		buffer[i] = ((uint8_t) string[i]) << 1;
 		i += 1;
@@ -60,31 +60,26 @@ uint8_t *address_from_string(uint8_t *buffer, const char *string) {
 	/* 011SSID0 , still need to set C/H and extension bit externally*/
 	// ^ <--- TODO : in address_field() 
 	
-	return &buffer[0];
+	return &buffer[i+1];
 }
 
 
-size_t address_field(struct frame *dest, const struct arguments *source) {
+size_t address_field(struct frame *dest, const char *source[],
+		size_t address_count) {
 	/* Fills dest->address with a proper address field of which 
 	 * dest->address_count elements are to be used with input from 
 	 * argument struct from main
 	 * address_count is additionally returned.
 	 */
-	int nodes = source->repeater_count + 2;
-	dest->address = malloc(nodes * 7 * sizeof(*(dest->address)));
-	if (dest->address == NULL) {
-		fprintf(stderr, "fatal, malloc failed");
-		exit(EX_OSERR);
-	}
-	uint8_t *next = dest->address;
 
-	int i;
-	for(i = 0 ; i < nodes ; ++i) {
-		next = address_from_string(next, source->routing[i]);
+	uint8_t *next = dest->address;
+	size_t i;
+	for(i = 0 ; i < address_count ; ++i) {
+		next = address_from_string(next, source[i]);
 	}
 	next -= 1;
 	*next |= 0x01;
 
-	dest->address_count = nodes;
-	return nodes;
+	dest->address_count = address_count;
+	return address_count;
 }
