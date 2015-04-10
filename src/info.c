@@ -24,6 +24,7 @@ bool bit_destuff(
 			if(bit) { // flag found
 				state->flag_found = true;
 				state->contiguous_bit_count += 1;
+				set_bit(dest, dest_n, bit, &state->set_state);
 			}
 			else { // destuff this
 				state->contiguous_bit_count = 0;
@@ -36,9 +37,9 @@ bool bit_destuff(
 			else {
 				state->contiguous_bit_count = 0;
 			}
+			set_bit(dest, dest_n, bit, &state->set_state);
 		}
 
-		set_bit(dest, dest_n, bit, &state->set_state);
 	}
 	if(state->flag_found) {
 		/*if(!state->get_state.src_consumed) {*/
