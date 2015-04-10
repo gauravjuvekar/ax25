@@ -50,6 +50,7 @@ uint8_t write_frame(
 				get_bit(&flag, 1, &stuff_state.get_state),
 				&stuff_state.set_state);
 	}
+
 	stuff_state.get_state.src_consumed = false;
 	stuff_state.get_state.src_index    = 0;
 	stuff_state.get_state.src_mask  =
@@ -58,6 +59,7 @@ uint8_t write_frame(
 			buffer, 1024,
 			frame->address, 7 * frame->address_count,
 			&stuff_state);
+
 	stuff_state.get_state.src_consumed = false;
 	stuff_state.get_state.src_index    = 0;
 	stuff_state.get_state.src_mask  =
@@ -66,6 +68,7 @@ uint8_t write_frame(
 			buffer, 1024,
 			&frame->control, 1,
 			&stuff_state);
+
 	stuff_state.get_state.src_consumed = false;
 	stuff_state.get_state.src_index    = 0;
 	stuff_state.get_state.src_mask  =
@@ -74,6 +77,7 @@ uint8_t write_frame(
 			buffer, 1024,
 			&frame->pid, 1,
 			&stuff_state);
+
 	stuff_state.get_state.src_consumed = false;
 	stuff_state.get_state.src_index    = 0;
 	stuff_state.get_state.src_mask  =
@@ -82,6 +86,7 @@ uint8_t write_frame(
 			buffer, 1024,
 			frame->info, frame->info_count,
 			&stuff_state);
+
 	stuff_state.get_state.src_consumed = false;
 	stuff_state.get_state.src_index    = 0;
 	stuff_state.get_state.src_mask  =
@@ -90,6 +95,7 @@ uint8_t write_frame(
 			buffer, 1024,
 			(uint8_t *)&frame->fcs, 2,
 			&stuff_state);
+
 	stuff_state.get_state.src_consumed = false;
 	stuff_state.get_state.src_index    = 0;
 	stuff_state.get_state.src_mask  =
