@@ -32,10 +32,10 @@ uint8_t write_frame(
 
 	// bit_stuff and write
 	uint8_t buffer[1024];
+	buffer[0] = 0;
 	struct bit_stuff_state stuff_state;
 	
-	stuff_state.get_state.src_mask  =
-		(0x1u<<(sizeof(stuff_state.get_state.src_mask)  * 8 - 1));
+	stuff_state.get_state.src_mask     = UINT8_T_MSB_MASK;
 	stuff_state.set_state.dest_mask    = bit_rotate_mask;
 	stuff_state.get_state.src_index    = 0;
 	stuff_state.set_state.dest_index   = 0;
@@ -53,8 +53,7 @@ uint8_t write_frame(
 
 	stuff_state.get_state.src_consumed = false;
 	stuff_state.get_state.src_index    = 0;
-	stuff_state.get_state.src_mask  =
-		(0x1u<<(sizeof(stuff_state.get_state.src_mask)  * 8 - 1));
+	stuff_state.get_state.src_mask  = UINT8_T_MSB_MASK;
 	bit_stuff(
 			buffer, 1024,
 			frame->address, 7 * frame->address_count,
@@ -62,8 +61,7 @@ uint8_t write_frame(
 
 	stuff_state.get_state.src_consumed = false;
 	stuff_state.get_state.src_index    = 0;
-	stuff_state.get_state.src_mask  =
-		(0x1u<<(sizeof(stuff_state.get_state.src_mask)  * 8 - 1));
+	stuff_state.get_state.src_mask  = UINT8_T_MSB_MASK;
 	bit_stuff(
 			buffer, 1024,
 			&frame->control, 1,
@@ -71,8 +69,7 @@ uint8_t write_frame(
 
 	stuff_state.get_state.src_consumed = false;
 	stuff_state.get_state.src_index    = 0;
-	stuff_state.get_state.src_mask  =
-		(0x1u<<(sizeof(stuff_state.get_state.src_mask)  * 8 - 1));
+	stuff_state.get_state.src_mask  = UINT8_T_MSB_MASK;
 	bit_stuff(
 			buffer, 1024,
 			&frame->pid, 1,
@@ -80,8 +77,7 @@ uint8_t write_frame(
 
 	stuff_state.get_state.src_consumed = false;
 	stuff_state.get_state.src_index    = 0;
-	stuff_state.get_state.src_mask  =
-		(0x1u<<(sizeof(stuff_state.get_state.src_mask)  * 8 - 1));
+	stuff_state.get_state.src_mask  = UINT8_T_MSB_MASK;
 	bit_stuff(
 			buffer, 1024,
 			frame->info, frame->info_count,
@@ -89,8 +85,7 @@ uint8_t write_frame(
 
 	stuff_state.get_state.src_consumed = false;
 	stuff_state.get_state.src_index    = 0;
-	stuff_state.get_state.src_mask  =
-		(0x1u<<(sizeof(stuff_state.get_state.src_mask)  * 8 - 1));
+	stuff_state.get_state.src_mask  = UINT8_T_MSB_MASK;
 	bit_stuff(
 			buffer, 1024,
 			(uint8_t *)&frame->fcs, 2,
@@ -98,14 +93,15 @@ uint8_t write_frame(
 
 	stuff_state.get_state.src_consumed = false;
 	stuff_state.get_state.src_index    = 0;
-	stuff_state.get_state.src_mask  =
-		(0x1u<<(sizeof(stuff_state.get_state.src_mask)  * 8 - 1));
+	stuff_state.get_state.src_mask  = UINT8_T_MSB_MASK;
 	// write flag
 	while(!stuff_state.get_state.src_consumed) {
 		set_bit(buffer, 1024,
 				get_bit(&flag, 1, &stuff_state.get_state),
 				&stuff_state.set_state);
 	}
+	
+
 
 	// get previous byte
 	fseek(output, -1, SEEK_CUR);
@@ -114,7 +110,12 @@ uint8_t write_frame(
 	fseek(output, -1, SEEK_CUR);
 
 	// OR it with flag beginning
-	buffer[0] |= byte_buffer;
+	uint8_t tmp_mask = bit_rotate_mask;
+	while(tmp_mask) {
+		byte_buffer &= ~tmp_mask;
+		tmp_mask >>= 1;
+	}
+	buffer[0] |= byte_buffer ;
 	buffer[stuff_state.set_state.dest_index + 1] = 0;
 	fwrite(buffer, 1, stuff_state.set_state.dest_index + 1 , output);
 
@@ -167,7 +168,7 @@ void encode_main_loop(
 
 
 	size_t send_sequence = 0;
-	uint8_t file_bit_shift_mask = 0x1u << (sizeof(file_bit_shift_mask)* 8 - 1);
+	uint8_t file_bit_shift_mask = UINT8_T_MSB_MASK;
 	while(!feof((FILE *)input)) {
 		frame.info_count =
 			fread(frame.info,sizeof(*frame.info),info_count,(FILE *)input);
