@@ -128,14 +128,14 @@ void decode_main_loop(const FILE *input, FILE *output) {
 						// got interspace between two flags
 					}
 				}
-				else if (destuff_state.data_error) {
-					fprintf(stderr,
-							"Data error, 7 contiguous bits detected.\n");
+			}
+			else if (destuff_state.data_error) {
+				fprintf(stderr,
+						"Data error, 7 contiguous bits detected.\n");
 
-					free(frame.address);
-					free(frame.info);
-					exit(EX_DATAERR);
-				}
+				free(frame.address);
+				free(frame.info);
+				exit(EX_DATAERR);
 			}
 		} while (!destuff_state.get_state.src_consumed);
 	}
