@@ -17,28 +17,36 @@
 void read_frame(
 		uint8_t buffer[], size_t buffer_n,
 		struct frame *frame) {
-	size_t i = 0;
-	for(i = 0; i < buffer_n - 2; ++i) {
-		buffer[i] = byterev(buffer[i]);
+	size_t buffer_index = 0;
+	size_t count        = 0;
+	for(buffer_index = 0; buffer_index < buffer_n - 2; ++buffer_index) {
+		buffer[buffer_index] = byterev(buffer[buffer_index]);
 	}
 	// Write address
-	for(i = 0; ; ++i) { 
-		frame->address[i] = buffer[i];
-		if(buffer[i] & 1) {
+	for(buffer_index = 0, count = 0; ; ++buffer_index, ++count) { 
+		frame->address[count] = buffer[buffer_index];
+		if(buffer[buffer_index] & 0x01u) { // end of address field
 			break;
 		}
 	}
-	frame->address_count = (i + 1) / 7;
-	++i;
-	frame->control       = buffer[i];
-	++i;
-	frame->pid           = buffer[i];
-	++i;
+	frame->address_count = (count + 1) / 7;
+
+	++buffer_index;
+	frame->control       = buffer[buffer_index];
+
+	++buffer_index;
+	frame->pid           = buffer[buffer_index];
+
 	// info
-	frame->info_count = buffer_n - 2 - i;
-	memcpy(frame->info, &buffer[i], frame->info_count);
+	++buffer_index;
+	for(count = 0; buffer_index < buffer_n - 2; ++buffer_index, ++count) {
+		frame->info[count] = buffer[buffer_index];
+	}
+	frame->info_count = count;
 	//fcs
-	memcpy(&frame->fcs, &buffer[buffer_n-2],2);
+	for(count = 0; buffer_index < buffer_n ; ++count, ++buffer_index) {
+		((uint8_t *)(&frame->fcs))[count] = buffer[buffer_index];
+	}
 	frame->fcs = ntohs(frame->fcs); // Endianness
 }
 
@@ -61,15 +69,15 @@ void decode_main_loop(const FILE *input, FILE *output) {
 
 
 	const size_t buffer_n = 1024;
-	uint8_t buffer[buffer_n];
-	uint8_t buffer_destuffed[buffer_n];
+	uint8_t      buffer[buffer_n];
+	uint8_t      buffer_destuffed[buffer_n];
 
 	struct bit_destuff_state destuff_state;
-	bool destuff_ret;
+	bool   destuff_ret;
 
 	destuff_state.contiguous_bit_count = 0;
-	destuff_state.flag_found = false;
-	destuff_state.data_error = false;
+	destuff_state.flag_found           = false;
+	destuff_state.data_error           = false;
 
 	while(!feof((FILE *)input)) {
 		// New src buffer
